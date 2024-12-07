@@ -4,19 +4,20 @@
 
 
 (defn index->loc [index line-length]
-  [(quot index line-length) (dec (rem index line-length))])
+  [(quot index line-length) (rem index line-length)])
 
-(defn init-state [input]
-  (let [right-start (str/index-of input ">")
-        left-start (str/index-of input "<")
-        up-start (str/index-of input "^")
-        down-start (str/index-of input "v")
-        line-length (count (first (str/split-lines input)))
+(defn init-state [grid]
+  (let [grid-str (str/join (flatten grid))
+        right-start (str/index-of grid-str ">")
+        left-start (str/index-of grid-str "<")
+        up-start (str/index-of grid-str "^")
+        down-start (str/index-of grid-str "v")
+        line-length (count (first grid))
         state (cond
-          right-start {:loc (index->loc right-start line-length) :direction :right}
-          left-start {:loc (index->loc left-start line-length) :direction :left}
-          up-start {:loc (index->loc up-start line-length) :direction :up}
-          down-start {:loc (index->loc down-start line-length) :direction :down})]
+                right-start {:loc (index->loc right-start line-length) :direction :right}
+                left-start {:loc (index->loc left-start line-length) :direction :left}
+                up-start {:loc (index->loc up-start line-length) :direction :up}
+                down-start {:loc (index->loc down-start line-length) :direction :down})]
     (assoc state :visited #{(:loc state)})))
 
 (defn move [state]
@@ -49,18 +50,17 @@
        str/split-lines
        (mapv (fn [l] (into [] (str/split l #""))))))
 
+(defn part1 [input]
+  (let [grid (create-grid input)]
+    (-> (loop [state (init-state grid)]
+          (if (get-in grid (:loc state))
+            (recur (step grid state))
+            state))
+        :visited
+        count
+        dec)))
 (comment
   (def input (str/trim (slurp "./inputs/day6.txt")))
-
-  (defn part1 [input]
-    (let [grid (create-grid input)]
-      (-> (loop [state (init-state input)]
-            (if (get-in grid (:loc state))
-              (recur (step grid state))
-              state))
-          :visited
-          count
-          dec)))
 
   (part1 input)
   ;;
