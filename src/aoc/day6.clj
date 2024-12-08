@@ -6,6 +6,10 @@
 (defn index->loc [index line-length]
   [(quot index line-length) (rem index line-length)])
 
+(defn mark-visited [state]
+  (update state :visited conj {:loc (:loc state)
+                               :direction (:direction state)}))
+
 (defn init-state [grid]
   (let [grid-str (str/join (flatten grid))
         right-start (str/index-of grid-str ">")
@@ -18,7 +22,7 @@
                 left-start {:loc (index->loc left-start line-length) :direction :left}
                 up-start {:loc (index->loc up-start line-length) :direction :up}
                 down-start {:loc (index->loc down-start line-length) :direction :down})]
-    (assoc state :visited #{(:loc state)})))
+    (mark-visited state)))
 
 (defn move [state]
   (match state
@@ -36,8 +40,6 @@
       {:direction :down} (assoc state :direction :left))
     state))
 
-(defn mark-visited [state]
-  (update state :visited conj (:loc state)))
 
 (defn step [grid state]
   (->> state
@@ -57,11 +59,30 @@
             (recur (step grid state))
             state))
         :visited
-        count
-        dec)))
+        (->>
+         (group-by :loc)
+         count
+         dec))))
+
+(defn part2 [input]
+  (let [grid (create-grid input)]
+    (-> (loop [state (init-state grid)]
+          (if (get-in grid (:loc state))
+            (recur (step grid state))
+            state))
+        :visited
+        (->>
+         (group-by :loc)
+         (filter (fn [[i j] _]
+                   (and (not= i 0)
+                        (not= i (dec (count grid))))))
+         (filter #(> (count (second %)) 1))))))
+
 (comment
   (def input (str/trim (slurp "./inputs/day6.txt")))
 
   (part1 input)
+
+  (part2 input)
   ;;
   )
